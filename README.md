@@ -12,19 +12,15 @@ It handles the full lifecycle of a fresh server, including:
 
 The goal is to provide a simple, reusable starting point for deploying small applications without manually configuring servers each time.
 
----
-
 ## Features
 
-- **Base server setup** — users, SSH, common packages, timezone, updates  
-- **PostgreSQL provisioning** — installation, users, databases  
-- **Firewall (UFW) + Fail2Ban** — basic hardening  
-- **Caddy reverse proxy** — domain routing and TLS  
-- **Environment-specific inventories** — stage vs prod  
-- **Idempotent roles** — safe to re-run  
+- **Base server setup** — users, SSH, common packages, timezone, updates
+- **PostgreSQL provisioning** — installation, users, databases
+- **Firewall (UFW) + Fail2Ban** — basic hardening
+- **Caddy reverse proxy** — domain routing and TLS
+- **Environment-specific inventories** — stage vs prod
+- **Idempotent roles** — safe to re-run
 - **Encrypted secrets with Ansible Vault**
-
----
 
 ## Project Structure
 
@@ -48,8 +44,6 @@ platform-bootstrap/
 └── site.yml
 ```
 
----
-
 ## Getting Started
 
 Install the required Ansible collections:
@@ -60,13 +54,13 @@ ansible-galaxy collection install community.general community.postgresql
 
 Set up your inventory (staging example):
 
-``` bash
+```bash
 vim inventories/stage/hosts.yml
 ```
 
 Add your servers, grouped by role:
 
-``` yaml
+```yaml
 db_servers:
   hosts:
     stage-db1:
@@ -91,58 +85,53 @@ ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml \
 
 Subsequent runs (after SSH keys are configured):
 
-``` bash
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
 ```
 
-
 If you need encrypted variables (recommended), create a vault file:
 
-``` bash
+```bash
 ansible-vault create group_vars/all/vault.yml
 ```
 
 Then run the full playbook:
 
-``` bash 
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
 ```
 
 To preview changes without applying them:
 
-``` bash 
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --check
 ```
-
----
 
 ## Running Specific Roles
 
 #### Base setup on all hosts
 
-``` bash
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/base_setup.yml
 ```
 
 #### Database server only
 
-``` bash
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/db_setup.yml --ask-vault-pass
 ```
 
 #### Application host only
 
-``` bash
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/app_setup.yml
 ```
 
 #### Limit execution to specific hosts:
 
-``` bash
+```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit stage-app1
 ```
-
----
 
 ## Quick Commands
 
@@ -155,13 +144,11 @@ make setup-stage   # Full staging setup
 make check-stage   # Dry-run
 ```
 
----
-
 ## Configuration
 
 Some commonly used variables:
-``` yaml
 
+```yaml
 # group_vars/all.yml
 env: stage
 timezone: Europe/Copenhagen
@@ -170,7 +157,7 @@ system_user: deployer
 
 Database-specific variables:
 
-``` yaml
+```yaml
 postgresql_databases:
   - name: appdb
 
@@ -182,9 +169,8 @@ postgresql_users:
 
 Application role variables:
 
-``` yaml
+```yaml
 app_name: myapp
 app_base_dir: /opt/myapp
 caddy_config_source: stage_Caddyfile
 ```
-
