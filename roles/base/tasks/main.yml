@@ -21,7 +21,6 @@
   apt:
     name: "{{ base_optional_packages }}"
     state: present
-  ignore_errors: true
 
 - name: Create symlink for fd-find
   file:
@@ -37,19 +36,22 @@
   when: base_install_eza
 
 - name: Install eza
+  when: base_install_eza and not eza_binary.stat.exists
   block:
     - name: Detect system architecture
       set_fact:
-        eza_arch: "{{ 'x86_64-unknown-linux-gnu' if ansible_architecture == 'x86_64' else 'aarch64-unknown-linux-gnu' if ansible_architecture == 'aarch64' else '' }}"
+        eza_arch: >-
+          {{ 'x86_64-unknown-linux-gnu' if ansible_architecture == 'x86_64'
+          else 'aarch64-unknown-linux-gnu' if ansible_architecture == 'aarch64'
+          else '' }}
 
     - name: Download and install eza
       unarchive:
         src: "https://github.com/eza-community/eza/releases/latest/download/eza_{{ eza_arch }}.tar.gz"
         dest: /usr/local/bin
         remote_src: true
-        mode: '0755'
+        mode: "0755"
       when: eza_arch != ''
-  when: base_install_eza and not eza_binary.stat.exists
 
 - name: Set timezone
   community.general.timezone:
@@ -86,7 +88,7 @@
     state: directory
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0700'
+    mode: "0700"
 
 - name: Add SSH public key to authorized_keys
   authorized_key:
@@ -101,7 +103,7 @@
     state: directory
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0755'
+    mode: "0755"
 
 - name: Deploy fish aliases
   copy:
@@ -109,7 +111,7 @@
     dest: "/home/{{ system_user }}/.config/fish/conf.d/alias.fish"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Deploy fish environment variables
   copy:
@@ -117,7 +119,7 @@
     dest: "/home/{{ system_user }}/.config/fish/conf.d/env.fish"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Install neovim
   include_tasks: neovim.yml
