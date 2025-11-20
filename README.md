@@ -170,7 +170,9 @@ postgresql_users:
 Application role variables:
 
 ```yaml
-app_name: myapp
-app_base_dir: /opt/myapp
+app_name: myapp  # Required - used for system user and directory paths
+# app_user: custom_user  # Optional - defaults to app_name
 caddy_config_source: stage_Caddyfile
 ```
+
+Directories are automatically generated from `app_name`: `/opt/{{ app_name }}`, `/var/log/{{ app_name }}`, `/var/lib/{{ app_name }}`, `/etc/{{ app_name }}`

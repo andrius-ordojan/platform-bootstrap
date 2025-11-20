@@ -1,15 +1,11 @@
 ---
-# Environment
 env: stage
 private_network: 10.2.0.0/16
 
-# System Configuration
 timezone: Europe/Berlin
 system_user: andrius
 
-# SSH Configuration
 ssh_public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
 
-# Firewall
 firewall_allow_ssh: true
 firewall_ssh_port: 22

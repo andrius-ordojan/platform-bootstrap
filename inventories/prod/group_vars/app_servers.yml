@@ -1,10 +1,10 @@
 ---
-app_name: callclara
-app_user: callclara
-app_base_dir: /opt/callclara
-app_log_dir: /var/log/callclara
-app_data_dir: /var/lib/callclara
-app_config_dir: /etc/callclara
+# REQUIRED: Set your application name
+# This will be used for:
+#   - System user: {{ app_name }}
+#   - Directories: /opt/{{ app_name }}, /var/log/{{ app_name }}, /var/lib/{{ app_name }}, /etc/{{ app_name }}
+#   - Systemd services: {{ app_name }}-*
+app_name: myapp # ← CHANGE THIS to your application name
 
 caddy_config_source: prod_Caddyfile
 
