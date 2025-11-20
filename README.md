@@ -89,10 +89,17 @@ Subsequent runs (after SSH keys are configured):
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
 ```
 
-If you need encrypted variables (recommended), create a vault file:
+If you need encrypted variables, create vault files:
 
 ```bash
+# Shared secrets (system user password)
 ansible-vault create group_vars/all/vault.yml
+
+# Stage database password
+ansible-vault create inventories/stage/group_vars/vault.yml
+
+# Production database password
+ansible-vault create inventories/prod/group_vars/vault.yml
 ```
 
 Then run the full playbook:
@@ -170,7 +177,7 @@ postgresql_users:
 Application role variables:
 
 ```yaml
-app_name: myapp  # Required - used for system user and directory paths
+app_name: myapp # Required - used for system user and directory paths
 # app_user: custom_user  # Optional - defaults to app_name
 caddy_config_source: stage_Caddyfile
 ```

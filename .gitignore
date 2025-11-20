@@ -1,6 +1,7 @@
 # Ansible
 *.retry
 group_vars/all/vault.yml
+inventories/*/group_vars/vault.yml
 .vault_pass
 .vault_password
 
