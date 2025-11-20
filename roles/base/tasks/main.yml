@@ -104,16 +104,16 @@
     mode: '0755'
 
 - name: Deploy fish aliases
-  template:
-    src: fish_aliases.fish.j2
+  copy:
+    src: fish_aliases.fish
     dest: "/home/{{ system_user }}/.config/fish/conf.d/alias.fish"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
     mode: '0644'
 
 - name: Deploy fish environment variables
-  template:
-    src: fish_env.fish.j2
+  copy:
+    src: fish_env.fish
     dest: "/home/{{ system_user }}/.config/fish/conf.d/env.fish"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
