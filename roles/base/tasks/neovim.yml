@@ -5,12 +5,13 @@
   register: nvim_binary
 
 - name: Download and install neovim
+  when: not nvim_binary.stat.exists
   block:
     - name: Download neovim
       get_url:
         url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
         dest: /tmp/nvim-linux-x86_64.tar.gz
-        mode: '0644'
+        mode: "0644"
 
     - name: Extract neovim
       unarchive:
@@ -22,7 +23,7 @@
       copy:
         src: /tmp/nvim-linux-x86_64/bin/nvim
         dest: /usr/local/bin/nvim
-        mode: '0755'
+        mode: "0755"
         remote_src: true
 
     - name: Install neovim share files
@@ -38,7 +39,6 @@
       loop:
         - /tmp/nvim-linux-x86_64.tar.gz
         - /tmp/nvim-linux-x86_64
-  when: not nvim_binary.stat.exists
 
 - name: Create neovim config directory for user
   file:
@@ -46,13 +46,13 @@
     state: directory
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0755'
+    mode: "0755"
 
 - name: Create neovim config directory for root
   file:
     path: /root/.config/nvim
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Deploy neovim config for user
   copy:
@@ -60,13 +60,13 @@
     dest: "/home/{{ system_user }}/.config/nvim/init.lua"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Deploy neovim config for root
   copy:
     src: neovim/init.lua
     dest: /root/.config/nvim/init.lua
-    mode: '0644'
+    mode: "0644"
 
 - name: Add EDITOR env var to root bashrc
   lineinfile:

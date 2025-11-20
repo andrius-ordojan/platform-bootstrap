@@ -11,7 +11,9 @@
     enabled: true
 
 - name: Get PostgreSQL config directory
-  shell: ls -d /etc/postgresql/*/main | head -1
+  shell: set -o pipefail && ls -d /etc/postgresql/*/main | head -1
+  args:
+    executable: /bin/bash
   register: pg_config_dir
   changed_when: false
 
@@ -67,6 +69,7 @@
 
 - name: Create PostgreSQL databases
   become_user: postgres
+  become: true
   community.postgresql.postgresql_db:
     name: "{{ item.name }}"
     state: present
@@ -75,6 +78,7 @@
 
 - name: Create PostgreSQL users
   become_user: postgres
+  become: true
   community.postgresql.postgresql_user:
     name: "{{ item.name }}"
     password: "{{ item.password }}"
@@ -85,6 +89,7 @@
 
 - name: Grant privileges to users
   become_user: postgres
+  become: true
   community.postgresql.postgresql_privs:
     database: "{{ item.database }}"
     roles: "{{ item.name }}"
