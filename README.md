@@ -74,16 +74,17 @@ app_servers:
 
 ### First Run
 
-For initial provisioning of a fresh server that still uses password authentication:
+For initial provisioning of a fresh server (connecting as root):
 
 ```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml \
+  -u root \
   --ask-vault-pass \
   --ask-pass \
   --ask-become-pass
 ```
 
-Subsequent runs (after SSH keys are configured):
+Subsequent runs (after SSH keys are configured and deployer user created):
 
 ```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass

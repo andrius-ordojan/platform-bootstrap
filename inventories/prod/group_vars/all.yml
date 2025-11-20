@@ -3,7 +3,7 @@ env: prod
 private_network: 10.1.0.0/16
 
 timezone: Europe/Berlin
-system_user: andrius
+system_user: deployer
 
 ssh_public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
 
