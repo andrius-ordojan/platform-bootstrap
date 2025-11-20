@@ -54,17 +54,17 @@
     state: directory
     mode: '0755'
 
-- name: Download neovim config for user
-  get_url:
-    url: "{{ base_neovim_config_url }}"
+- name: Deploy neovim config for user
+  copy:
+    src: neovim/init.lua
     dest: "/home/{{ system_user }}/.config/nvim/init.lua"
     owner: "{{ system_user }}"
     group: "{{ system_user }}"
     mode: '0644'
 
-- name: Download neovim config for root
-  get_url:
-    url: "{{ base_neovim_config_url }}"
+- name: Deploy neovim config for root
+  copy:
+    src: neovim/init.lua
     dest: /root/.config/nvim/init.lua
     mode: '0644'
 
