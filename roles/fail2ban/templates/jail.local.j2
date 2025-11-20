@@ -1,0 +1,12 @@
+[DEFAULT]
+bantime  = {{ fail2ban_bantime }}
+findtime  = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+
+# Avoid banning local network
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+
+[sshd]
+enabled = true
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s

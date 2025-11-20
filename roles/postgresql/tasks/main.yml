@@ -1,0 +1,95 @@
+---
+- name: Install PostgreSQL packages
+  apt:
+    name: "{{ postgresql_packages }}"
+    state: present
+
+- name: Ensure PostgreSQL is running
+  systemd:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Get PostgreSQL config directory
+  shell: ls -d /etc/postgresql/*/main | head -1
+  register: pg_config_dir
+  changed_when: false
+
+- name: Set PostgreSQL config path fact
+  set_fact:
+    postgresql_config_path: "{{ pg_config_dir.stdout }}"
+
+- name: Calculate performance tuning values based on RAM
+  set_fact:
+    shared_buffers_mb: "{{ (ansible_memtotal_mb * postgresql_shared_buffers_percent) | int }}"
+    effective_cache_size_mb: "{{ (ansible_memtotal_mb * postgresql_effective_cache_size_percent) | int }}"
+    work_mem_mb: "{{ (ansible_memtotal_mb * postgresql_work_mem_percent) | int }}"
+    maintenance_work_mem_mb: "{{ (ansible_memtotal_mb * postgresql_maintenance_work_mem_percent) | int }}"
+
+- name: Configure PostgreSQL to listen on all addresses
+  lineinfile:
+    path: "{{ postgresql_config_path }}/postgresql.conf"
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+  notify: restart postgresql
+
+- name: Add performance tuning to postgresql.conf
+  blockinfile:
+    path: "{{ postgresql_config_path }}/postgresql.conf"
+    block: |
+      # Basic performance tuning
+      shared_buffers = {{ shared_buffers_mb }}MB
+      effective_cache_size = {{ effective_cache_size_mb }}MB
+      work_mem = {{ work_mem_mb }}MB
+      maintenance_work_mem = {{ maintenance_work_mem_mb }}MB
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      max_connections = {{ postgresql_max_connections }}
+
+      # Write-ahead logging
+      wal_buffers = 16MB
+      checkpoint_completion_target = 0.9
+
+      # Query planner
+      default_statistics_target = 100
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - Performance Tuning"
+  notify: restart postgresql
+
+- name: Configure pg_hba.conf for private network access
+  lineinfile:
+    path: "{{ postgresql_config_path }}/pg_hba.conf"
+    line: "host all all {{ private_network }} md5"
+    state: present
+  notify: restart postgresql
+
+- name: Flush handlers to restart PostgreSQL
+  meta: flush_handlers
+
+- name: Create PostgreSQL databases
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ item.name }}"
+    state: present
+  loop: "{{ postgresql_databases }}"
+  when: postgresql_databases | length > 0
+
+- name: Create PostgreSQL users
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    state: present
+  loop: "{{ postgresql_users }}"
+  when: postgresql_users | length > 0
+  no_log: true
+
+- name: Grant privileges to users
+  become_user: postgres
+  community.postgresql.postgresql_privs:
+    database: "{{ item.database }}"
+    roles: "{{ item.name }}"
+    privs: USAGE,CREATE
+    objs: public
+    type: schema
+  loop: "{{ postgresql_users }}"
+  when: postgresql_users | length > 0

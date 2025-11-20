@@ -1,0 +1,9 @@
+---
+- name: Base server configuration
+  hosts: all
+  become: true
+
+  roles:
+    - base
+    - firewall
+    - fail2ban

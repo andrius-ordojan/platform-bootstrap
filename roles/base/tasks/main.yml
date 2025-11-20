@@ -1,0 +1,130 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    autoremove: true
+    autoclean: true
+  register: apt_upgrade
+  changed_when: apt_upgrade.changed
+
+- name: Install essential packages
+  apt:
+    name: "{{ base_essential_packages }}"
+    state: present
+
+- name: Install optional packages
+  apt:
+    name: "{{ base_optional_packages }}"
+    state: present
+  ignore_errors: true
+
+- name: Create symlink for fd-find
+  file:
+    src: /usr/bin/fdfind
+    dest: /usr/local/bin/fd
+    state: link
+  when: "'fd-find' in base_optional_packages"
+
+- name: Check if eza is installed
+  stat:
+    path: /usr/local/bin/eza
+  register: eza_binary
+  when: base_install_eza
+
+- name: Install eza
+  block:
+    - name: Detect system architecture
+      set_fact:
+        eza_arch: "{{ 'x86_64-unknown-linux-gnu' if ansible_architecture == 'x86_64' else 'aarch64-unknown-linux-gnu' if ansible_architecture == 'aarch64' else '' }}"
+
+    - name: Download and install eza
+      unarchive:
+        src: "https://github.com/eza-community/eza/releases/latest/download/eza_{{ eza_arch }}.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        mode: '0755'
+      when: eza_arch != ''
+  when: base_install_eza and not eza_binary.stat.exists
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Ensure systemd-timesyncd is running
+  systemd:
+    name: systemd-timesyncd
+    state: started
+    enabled: true
+
+- name: Enable NTP synchronization
+  command: timedatectl set-ntp true
+  changed_when: false
+
+- name: Create system user
+  user:
+    name: "{{ system_user }}"
+    shell: "{{ base_user_shell }}"
+    groups: "{{ base_user_groups }}"
+    append: true
+    state: present
+    create_home: true
+
+- name: Set user password
+  user:
+    name: "{{ system_user }}"
+    password: "{{ vault_system_user_password }}"
+  when: vault_system_user_password is defined
+
+- name: Create .ssh directory for user
+  file:
+    path: "/home/{{ system_user }}/.ssh"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0700'
+
+- name: Add SSH public key to authorized_keys
+  authorized_key:
+    user: "{{ system_user }}"
+    state: present
+    key: "{{ ssh_public_key }}"
+  when: ssh_public_key is defined
+
+- name: Create fish config directory
+  file:
+    path: "/home/{{ system_user }}/.config/fish/conf.d"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0755'
+
+- name: Deploy fish aliases
+  template:
+    src: fish_aliases.fish.j2
+    dest: "/home/{{ system_user }}/.config/fish/conf.d/alias.fish"
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0644'
+
+- name: Deploy fish environment variables
+  template:
+    src: fish_env.fish.j2
+    dest: "/home/{{ system_user }}/.config/fish/conf.d/env.fish"
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0644'
+
+- name: Install neovim
+  include_tasks: neovim.yml
+  when: base_install_neovim
+
+- name: Configure unattended upgrades
+  include_tasks: unattended_upgrades.yml
+
+- name: Configure SSH
+  include_tasks: ssh.yml

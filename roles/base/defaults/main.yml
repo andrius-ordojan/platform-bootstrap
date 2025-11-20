@@ -1,0 +1,34 @@
+---
+base_essential_packages:
+  - ufw
+  - git
+  - fail2ban
+  - net-tools
+  - wget
+  - curl
+  - lnav
+  - unattended-upgrades
+
+base_optional_packages:
+  - fish
+  - zip
+  - ncdu
+  - btop
+  - ripgrep
+  - fd-find
+  - sd
+
+base_user_shell: /usr/bin/fish
+base_user_groups:
+  - sudo
+  - systemd-journal
+
+base_ssh_port: 22
+base_ssh_permit_root_login: "no"
+base_ssh_password_authentication: "no"
+base_ssh_max_auth_tries: 3
+
+base_install_neovim: true
+base_neovim_config_url: "https://raw.githubusercontent.com/andrius-ordojan/nvim-basic/refs/heads/main/init.lua"
+
+base_install_eza: true

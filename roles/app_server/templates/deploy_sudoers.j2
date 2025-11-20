@@ -1,0 +1,22 @@
+Cmnd_Alias DEPLOY_SERVICES = \
+    /bin/systemctl start {{ app_name }}-*, \
+    /bin/systemctl stop {{ app_name }}-*, \
+    /bin/systemctl restart {{ app_name }}-*, \
+    /bin/systemctl status {{ app_name }}-*, \
+    /bin/systemctl reload {{ app_name }}-*, \
+    /bin/systemctl enable {{ app_name }}-*, \
+    /bin/systemctl daemon-reload
+
+Cmnd_Alias DEPLOY_FS = \
+    /bin/chown root\:root /etc/caddy/Caddyfile, \
+    /bin/chmod 644 /etc/caddy/Caddyfile, \
+    /bin/mkdir -p /etc/caddy/backups, \
+    /bin/cp /etc/caddy/Caddyfile /etc/caddy/backups/Caddyfile.backup.*, \
+    /bin/cp /tmp/Caddyfile.new /etc/caddy/Caddyfile, \
+    /bin/chmod 644 /etc/systemd/system/{{ app_name }}-*.service, \
+    /bin/cp /tmp/{{ app_name }}-*.service /etc/systemd/system/{{ app_name }}-*.service
+
+Cmnd_Alias DEPLOY_CADDY = \
+    /usr/bin/caddy reload *
+
+%{{ deploy_group }} ALL=(root) NOPASSWD: DEPLOY_SERVICES, DEPLOY_FS, DEPLOY_CADDY, /usr/sbin/ufw reload

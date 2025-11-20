@@ -1,0 +1,11 @@
+---
+env: prod
+private_network: 10.1.0.0/16
+
+timezone: Europe/Berlin
+system_user: andrius
+
+ssh_public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+
+firewall_allow_ssh: true
+firewall_ssh_port: 22

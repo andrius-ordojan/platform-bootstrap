@@ -1,0 +1,78 @@
+---
+- name: Check if neovim is already installed
+  stat:
+    path: /usr/local/bin/nvim
+  register: nvim_binary
+
+- name: Download and install neovim
+  block:
+    - name: Download neovim
+      get_url:
+        url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+        dest: /tmp/nvim-linux-x86_64.tar.gz
+        mode: '0644'
+
+    - name: Extract neovim
+      unarchive:
+        src: /tmp/nvim-linux-x86_64.tar.gz
+        dest: /tmp
+        remote_src: true
+
+    - name: Install neovim binary
+      copy:
+        src: /tmp/nvim-linux-x86_64/bin/nvim
+        dest: /usr/local/bin/nvim
+        mode: '0755'
+        remote_src: true
+
+    - name: Install neovim share files
+      synchronize:
+        src: /tmp/nvim-linux-x86_64/share/
+        dest: /usr/local/share/
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Clean up neovim installation files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/nvim-linux-x86_64.tar.gz
+        - /tmp/nvim-linux-x86_64
+  when: not nvim_binary.stat.exists
+
+- name: Create neovim config directory for user
+  file:
+    path: "/home/{{ system_user }}/.config/nvim"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0755'
+
+- name: Create neovim config directory for root
+  file:
+    path: /root/.config/nvim
+    state: directory
+    mode: '0755'
+
+- name: Download neovim config for user
+  get_url:
+    url: "{{ base_neovim_config_url }}"
+    dest: "/home/{{ system_user }}/.config/nvim/init.lua"
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0644'
+
+- name: Download neovim config for root
+  get_url:
+    url: "{{ base_neovim_config_url }}"
+    dest: /root/.config/nvim/init.lua
+    mode: '0644'
+
+- name: Add EDITOR env var to root bashrc
+  lineinfile:
+    path: /root/.bashrc
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "export EDITOR=nvim"
+    - "export VISUAL=nvim"

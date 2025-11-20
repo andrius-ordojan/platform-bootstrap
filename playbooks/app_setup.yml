@@ -1,0 +1,8 @@
+---
+- name: Application server configuration
+  hosts: app_servers
+  become: true
+
+  roles:
+    - app_server
+    - caddy

@@ -1,0 +1,20 @@
+---
+- name: Create SSH config.d archive directory
+  file:
+    path: /etc/ssh/sshd_config.d/_archive
+    state: directory
+    mode: '0755'
+
+- name: Archive existing SSH configuration files
+  shell: mv /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config.d/_archive/ 2>/dev/null || true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Deploy custom SSH configuration
+  template:
+    src: sshd_custom.conf.j2
+    dest: /etc/ssh/sshd_config.d/50-custom.conf
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: restart sshd

@@ -1,0 +1,3 @@
+---
+caddy_config_source: ""  # Should be set in group_vars
+caddy_config_dir: /etc/caddy

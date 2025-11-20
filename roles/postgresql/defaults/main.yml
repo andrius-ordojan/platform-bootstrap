@@ -1,0 +1,18 @@
+---
+postgresql_packages:
+  - postgresql
+  - postgresql-contrib
+  - python3-psycopg2  # required for ansible
+  - pgcli
+
+postgresql_version: 15
+postgresql_listen_addresses: '*'
+postgresql_max_connections: 100
+
+postgresql_shared_buffers_percent: 0.25
+postgresql_effective_cache_size_percent: 0.75
+postgresql_work_mem_percent: 0.0625
+postgresql_maintenance_work_mem_percent: 0.125
+
+postgresql_databases: []
+postgresql_users: []

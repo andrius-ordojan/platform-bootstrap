@@ -1,0 +1,13 @@
+---
+firewall_default_incoming: deny
+firewall_default_outgoing: allow
+
+firewall_allow_ssh: true
+firewall_ssh_port: 22
+
+firewall_allow_http: false
+firewall_allow_https: false
+
+firewall_allow_postgresql: false
+firewall_postgresql_port: 5432
+firewall_postgresql_allowed_networks: []

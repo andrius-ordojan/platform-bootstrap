@@ -1,0 +1,7 @@
+---
+- name: Database server configuration
+  hosts: db_servers
+  become: true
+
+  roles:
+    - postgresql

@@ -1,0 +1,61 @@
+---
+- name: Create application system user
+  user:
+    name: "{{ app_user }}"
+    system: true
+    shell: /bin/false
+    create_home: false
+    state: present
+
+- name: Create deploy group
+  group:
+    name: "{{ deploy_group }}"
+    state: present
+
+- name: Add users to deploy group
+  user:
+    name: "{{ item }}"
+    groups: "{{ deploy_group }}"
+    append: true
+  loop: "{{ deploy_group_users }}"
+
+- name: Create application directory structure
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default(system_user) }}"
+    group: "{{ item.group | default(system_user) }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: "{{ app_base_dir }}" }
+    - { path: "{{ app_base_dir }}/backend" }
+    - { path: "{{ app_base_dir }}/backend/bin" }
+    - { path: "{{ app_base_dir }}/web" }
+    - { path: "{{ app_log_dir }}", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_log_dir }}/backend", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_log_dir }}/web", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_data_dir }}", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_data_dir }}/backend", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_data_dir }}/web", owner: "{{ app_user }}", group: "{{ app_user }}" }
+    - { path: "{{ app_config_dir }}", owner: "{{ system_user }}", group: "{{ deploy_group }}" }
+
+- name: Create secret environment files
+  file:
+    path: "{{ item }}"
+    state: touch
+    owner: "{{ system_user }}"
+    group: "{{ deploy_group }}"
+    mode: '0640'
+    modification_time: preserve
+    access_time: preserve
+  loop:
+    - "{{ app_config_dir }}/backend-secrets.env"
+    - "{{ app_config_dir }}/web-secrets.env"
+    - "{{ app_config_dir }}/shared-secrets.env"
+
+- name: Deploy sudoers configuration for deploy group
+  template:
+    src: deploy_sudoers.j2
+    dest: /etc/sudoers.d/deploy
+    mode: '0440'
+    validate: 'visudo -cf %s'

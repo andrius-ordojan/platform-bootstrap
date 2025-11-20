@@ -1,0 +1,24 @@
+---
+- name: Base configuration for all servers
+  hosts: all
+  become: true
+
+  roles:
+    - base
+    - firewall
+    - fail2ban
+
+- name: Configure database servers
+  hosts: db_servers
+  become: true
+
+  roles:
+    - postgresql
+
+- name: Configure application servers
+  hosts: app_servers
+  become: true
+
+  roles:
+    - app_server
+    - caddy

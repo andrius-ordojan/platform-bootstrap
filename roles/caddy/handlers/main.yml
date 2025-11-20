@@ -1,0 +1,5 @@
+---
+- name: reload caddy
+  command: caddy reload --config {{ caddy_config_dir }}/Caddyfile
+  args:
+    chdir: "{{ caddy_config_dir }}"

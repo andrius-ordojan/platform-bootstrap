@@ -1,0 +1,13 @@
+---
+app_user: callclara
+app_name: callclara
+
+app_base_dir: /opt/callclara
+app_log_dir: /var/log/callclara
+app_data_dir: /var/lib/callclara
+app_config_dir: /etc/callclara
+
+deploy_group: deploy
+deploy_group_users:
+  - "{{ system_user }}"
+  - "{{ app_user }}"

@@ -1,0 +1,33 @@
+# Ansible
+*.retry
+group_vars/all/vault.yml
+.vault_pass
+.vault_password
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Ansible facts cache
+/tmp/ansible_facts/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Backup files
+*.backup
+*.bak

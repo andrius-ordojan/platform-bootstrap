@@ -1,0 +1,12 @@
+---
+app_name: callclara
+app_user: callclara
+app_base_dir: /opt/callclara
+app_log_dir: /var/log/callclara
+app_data_dir: /var/lib/callclara
+app_config_dir: /etc/callclara
+
+caddy_config_source: prod_Caddyfile
+
+firewall_allow_http: true
+firewall_allow_https: true

@@ -1,0 +1,17 @@
+---
+postgresql_version: 15
+postgresql_listen_addresses: "*"
+postgresql_max_connections: 100
+
+postgresql_databases:
+  - name: callclara
+
+postgresql_users:
+  - name: callclara
+    password: "{{ vault_db_password }}"
+    database: callclara
+
+firewall_allow_postgresql: true
+firewall_postgresql_port: 5432
+firewall_postgresql_allowed_networks:
+  - "{{ private_network }}"
