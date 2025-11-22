@@ -67,7 +67,7 @@
   command: timedatectl set-ntp true
   changed_when: false
 
-- name: Create system user
+- name: Ensure system user exists with password
   user:
     name: "{{ system_user }}"
     shell: "{{ base_user_shell }}"
@@ -75,11 +75,8 @@
     append: true
     state: present
     create_home: true
-
-- name: Set user password
-  user:
-    name: "{{ system_user }}"
     password: "{{ vault_system_user_password }}"
+    update_password: on_create
   when: vault_system_user_password is defined
 
 - name: Create .ssh directory for user
