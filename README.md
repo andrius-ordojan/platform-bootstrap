@@ -14,6 +14,7 @@ The goal is to provide a simple, reusable starting point for deploying small app
 
 ## Features
 
+- **Two-user security model** — separate ansible (automation) and admin (manual) users
 - **Base server setup** — users, SSH, common packages, timezone, updates
 - **PostgreSQL provisioning** — installation, users, databases
 - **Firewall (UFW) + Fail2Ban** — basic hardening
@@ -44,6 +45,27 @@ platform-bootstrap/
 └── site.yml
 ```
 
+## User Management Model
+
+This project creates two separate users for security and audit purposes:
+
+### ansible user (automation)
+- **Purpose**: Ansible automation only
+- **Sudo**: Passwordless (required for automation)
+- **SSH**: Key-based authentication only
+- **Usage**: Never login manually, only used by Ansible
+
+### admin user (manual operations)
+- **Purpose**: Human administrators for manual server work
+- **Sudo**: Password-required (more secure for manual operations)
+- **SSH**: Key-based authentication only
+- **Usage**: Your daily driver for server management
+
+This separation ensures:
+- Clear audit trail between automated and manual changes
+- Security: compromised admin credentials still require sudo password
+- Flexibility: multiple admins without touching automation user
+
 ## Getting Started
 
 Install the required Ansible collections:
@@ -63,7 +85,7 @@ Add your servers, grouped by role:
 ```yaml
 all:
   vars:
-    ansible_user: deployer
+    ansible_user: ansible  # Change to 'root' for first run, then back to 'ansible'
     ansible_python_interpreter: /usr/bin/python3
 
   children:
@@ -99,15 +121,33 @@ ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml -e "ansible_u
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit stage-app1 -e "ansible_user=root"
 ```
 
-This will update the server, install essential and accessory packages, configure timezone, install neovim, configure unattended upgrades, create the deployer user, configure SSH keys, and harden SSH access (disabling root login and password authentication).
+This will:
+- Update the server and install packages
+- Configure timezone, neovim, and unattended upgrades
+- Create the **ansible user** (passwordless sudo) for Ansible automation
+- Create the **admin user** (password-required sudo) for manual operations
+- Configure SSH keys for both users
+- Harden SSH access (disable root login and password authentication)
 
 ### Subsequent Runs
 
-After the deployer user is created, run without the override:
+After both users are created, run without the override:
 
 ```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml
 ```
+
+This will connect as the **ansible user** and perform all automation tasks.
+
+### Logging in as Admin
+
+For manual server operations, SSH in as the admin user:
+
+```bash
+ssh admin@your-server-ip
+```
+
+You'll be prompted for your sudo password when running privileged commands.
 
 ### Adding New Servers
 
@@ -118,7 +158,7 @@ When adding new servers to an existing environment:
    ```bash
    ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit new-hostname -e "ansible_user=root"
    ```
-3. Future runs will use the deployer user automatically
+3. Future runs will use the ansible user automatically
 
 ### Setting Up Vault Secrets
 
@@ -147,15 +187,18 @@ ansible-vault create inventories/stage/group_vars/all/vault.yml
 ansible-vault create inventories/prod/group_vars/all/vault.yml
 ```
 
-Each vault file should contain both the deployer password and database password:
+Each vault file should contain passwords for the admin user and database:
 
 ```yaml
 ---
-vault_system_user_password: "hashed_password_here"
+# Required: hashed password for admin user (for sudo)
+vault_admin_user_password: "hashed_password_here"
+
+# Required: database password (plain text)
 vault_db_password: "your_database_password"
 ```
 
-**To generate a hashed password for the deployer user:**
+**To generate a hashed password for the admin user:**
 
 ```bash
 mkpasswd --method=sha-512
@@ -164,8 +207,10 @@ mkpasswd --method=sha-512
 
 **Note:**
 - The vault password is automatically read from `.vault_pass`, so you won't be prompted during playbook runs
-- `vault_system_user_password` must be a hashed password (use `mkpasswd`)
+- `vault_admin_user_password` must be a hashed password (use `mkpasswd`)
 - `vault_db_password` can be plain text (PostgreSQL handles its own hashing)
+- The **ansible user** uses SSH key authentication only (no password)
+- The **admin user** requires password for sudo (for security)
 
 ## Running Specific Roles
 
@@ -209,10 +254,17 @@ make check-stage   # Dry-run
 Some commonly used variables:
 
 ```yaml
-# group_vars/all.yml
+# inventories/stage/group_vars/all/main.yml
 env: stage
-timezone: Europe/Copenhagen
-system_user: deployer
+timezone: Europe/Berlin
+
+# Ansible automation user (passwordless sudo)
+ansible_user: ansible
+ansible_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+
+# Admin user for manual operations (password-required sudo)
+admin_user: admin
+admin_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
 ```
 
 Database-specific variables:

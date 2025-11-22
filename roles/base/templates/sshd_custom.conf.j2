@@ -1,9 +1,9 @@
 PermitRootLogin {{ base_ssh_permit_root_login }}
 PasswordAuthentication {{ base_ssh_password_authentication }}
-PubkeyAuthentication "yes"
+PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
 
 Protocol 2
 MaxAuthTries {{ base_ssh_max_auth_tries }}
 
-AllowUsers {{ system_user }}
+AllowUsers {{ ansible_user }} {{ admin_user }}

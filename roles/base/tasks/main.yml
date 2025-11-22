@@ -67,55 +67,107 @@
   command: timedatectl set-ntp true
   changed_when: false
 
-- name: Ensure system user exists with password
+- name: Create ansible automation user
   user:
-    name: "{{ system_user }}"
+    name: "{{ ansible_user }}"
     shell: "{{ base_user_shell }}"
     groups: "{{ base_user_groups }}"
     append: true
     state: present
     create_home: true
-    password: "{{ vault_system_user_password }}"
-    update_password: on_create
-  when: vault_system_user_password is defined
 
-- name: Create .ssh directory for user
+- name: Create .ssh directory for ansible user
   file:
-    path: "/home/{{ system_user }}/.ssh"
+    path: "/home/{{ ansible_user }}/.ssh"
     state: directory
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0700"
 
-- name: Add SSH public key to authorized_keys
+- name: Add SSH public key to ansible user authorized_keys
   authorized_key:
-    user: "{{ system_user }}"
+    user: "{{ ansible_user }}"
     state: present
-    key: "{{ ssh_public_key }}"
-  when: ssh_public_key is defined
+    key: "{{ ansible_user_ssh_key }}"
 
-- name: Create fish config directory
+- name: Create fish config directory for ansible user
   file:
-    path: "/home/{{ system_user }}/.config/fish/conf.d"
+    path: "/home/{{ ansible_user }}/.config/fish/conf.d"
     state: directory
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0755"
 
-- name: Deploy fish aliases
+- name: Deploy fish aliases for ansible user
   copy:
     src: fish_aliases.fish
-    dest: "/home/{{ system_user }}/.config/fish/conf.d/alias.fish"
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    dest: "/home/{{ ansible_user }}/.config/fish/conf.d/alias.fish"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0644"
 
-- name: Deploy fish environment variables
+- name: Deploy fish environment variables for ansible user
   copy:
     src: fish_env.fish
-    dest: "/home/{{ system_user }}/.config/fish/conf.d/env.fish"
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    dest: "/home/{{ ansible_user }}/.config/fish/conf.d/env.fish"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Configure passwordless sudo for ansible user
+  copy:
+    content: "{{ ansible_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ ansible_user }}"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+- name: Create admin user
+  user:
+    name: "{{ admin_user }}"
+    shell: "{{ base_user_shell }}"
+    groups: sudo
+    append: true
+    state: present
+    create_home: true
+    password: "{{ vault_admin_user_password }}"
+    update_password: on_create
+
+- name: Create .ssh directory for admin user
+  file:
+    path: "/home/{{ admin_user }}/.ssh"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0700"
+
+- name: Add SSH public key to admin user authorized_keys
+  authorized_key:
+    user: "{{ admin_user }}"
+    state: present
+    key: "{{ admin_user_ssh_key }}"
+
+- name: Create fish config directory for admin user
+  file:
+    path: "/home/{{ admin_user }}/.config/fish/conf.d"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Deploy fish aliases for admin user
+  copy:
+    src: fish_aliases.fish
+    dest: "/home/{{ admin_user }}/.config/fish/conf.d/alias.fish"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Deploy fish environment variables for admin user
+  copy:
+    src: fish_env.fish
+    dest: "/home/{{ admin_user }}/.config/fish/conf.d/env.fish"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     mode: "0644"
 
 - name: Install neovim

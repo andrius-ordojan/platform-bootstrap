@@ -1,3 +1,6 @@
 ---
-vault_system_user_password: ""
+# Required: hashed password for admin user (for sudo)
+vault_admin_user_password: ""
+
+# Required: database password (plain text)
 vault_db_password: ""
