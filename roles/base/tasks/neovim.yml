@@ -40,12 +40,12 @@
         - /tmp/nvim-linux-x86_64.tar.gz
         - /tmp/nvim-linux-x86_64
 
-- name: Create neovim config directory for user
+- name: Create neovim config directory for admin user
   file:
-    path: "/home/{{ system_user }}/.config/nvim"
+    path: "/home/{{ admin_user }}/.config/nvim"
     state: directory
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     mode: "0755"
 
 - name: Create neovim config directory for root
@@ -54,12 +54,12 @@
     state: directory
     mode: "0755"
 
-- name: Deploy neovim config for user
+- name: Deploy neovim config for admin user
   copy:
     src: neovim/init.lua
-    dest: "/home/{{ system_user }}/.config/nvim/init.lua"
-    owner: "{{ system_user }}"
-    group: "{{ system_user }}"
+    dest: "/home/{{ admin_user }}/.config/nvim/init.lua"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     mode: "0644"
 
 - name: Deploy neovim config for root
