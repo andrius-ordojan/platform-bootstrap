@@ -49,7 +49,7 @@ platform-bootstrap/
 Install the required Ansible collections:
 
 ```bash
-ansible-galaxy collection install community.general community.postgresql
+ansible-galaxy collection install community.general community.postgresql ansible.posix
 ```
 
 Set up your inventory (staging example):
@@ -61,59 +61,111 @@ vim inventories/stage/hosts.yml
 Add your servers, grouped by role:
 
 ```yaml
-db_servers:
-  hosts:
-    stage-db1:
-      ansible_host: 10.2.0.5
+all:
+  vars:
+    ansible_user: deployer
+    ansible_python_interpreter: /usr/bin/python3
 
-app_servers:
-  hosts:
-    stage-app1:
-      ansible_host: 10.2.0.10
+  children:
+    db_servers:
+      hosts:
+        stage-db1:
+          ansible_host: 10.2.0.5
+
+    app_servers:
+      hosts:
+        stage-app1:
+          ansible_host: 10.2.0.10
 ```
 
 ### First Run
 
-For initial provisioning of a fresh server (connecting as root):
+For initial provisioning of a fresh server, ensure your SSH public key is added to root's `authorized_keys` during server creation.
+
+Create a vault password file:
 
 ```bash
-ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml \
-  -u root \
-  --ask-vault-pass \
-  --ask-pass \
-  --ask-become-pass
+echo "your_vault_password" > .vault_pass
+chmod 600 .vault_pass
 ```
 
-Subsequent runs (after SSH keys are configured and deployer user created):
+For the first run on new servers, override the user to connect as root:
 
 ```bash
-ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
+# First run on all servers
+ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml -e "ansible_user=root"
+
+# Or limit to specific new servers
+ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit stage-app1 -e "ansible_user=root"
 ```
 
-If you need encrypted variables, create vault files:
+This will update the server, install essential and accessory packages, configure timezone, install neovim, configure unattended upgrades, create the deployer user, configure SSH keys, and harden SSH access (disabling root login and password authentication).
+
+### Subsequent Runs
+
+After the deployer user is created, run without the override:
 
 ```bash
-# Shared secrets (system user password)
-ansible-vault create group_vars/all/vault.yml
-
-# Stage database password
-ansible-vault create inventories/stage/group_vars/vault.yml
-
-# Production database password
-ansible-vault create inventories/prod/group_vars/vault.yml
+ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml
 ```
 
-Then run the full playbook:
+### Adding New Servers
+
+When adding new servers to an existing environment:
+
+1. Add the server to your inventory
+2. Run the playbook with `--limit` and `-e "ansible_user=root"`:
+   ```bash
+   ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit new-hostname -e "ansible_user=root"
+   ```
+3. Future runs will use the deployer user automatically
+
+### Setting Up Vault Secrets
+
+The project uses Ansible Vault to encrypt sensitive data. Vault files are organized using the directory structure pattern:
+
+```
+inventories/stage/group_vars/
+└── all/
+    ├── main.yml        # Regular variables (committed)
+    └── vault.yml       # Encrypted secrets (committed, encrypted)
+```
+
+#### Environment-specific secrets
+
+Create vault files for each environment (staging and production):
 
 ```bash
-ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
+# Create directory structure
+mkdir -p inventories/stage/group_vars/all
+mkdir -p inventories/prod/group_vars/all
+
+# Create staging vault
+ansible-vault create inventories/stage/group_vars/all/vault.yml
+
+# Create production vault
+ansible-vault create inventories/prod/group_vars/all/vault.yml
 ```
 
-To preview changes without applying them:
+Each vault file should contain both the deployer password and database password:
+
+```yaml
+---
+vault_system_user_password: "hashed_password_here"
+vault_db_password: "your_database_password"
+```
+
+**To generate a hashed password for the deployer user:**
 
 ```bash
-ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --check
+mkpasswd --method=sha-512
+# Enter your password when prompted, then copy the full hash (starts with $6$)
 ```
+
+**Note:**
+- The vault password is automatically read from `.vault_pass`, so you won't be prompted during playbook runs
+- `vault_system_user_password` must be a hashed password (use `mkpasswd`)
+- `vault_db_password` can be plain text (PostgreSQL handles its own hashing)
 
 ## Running Specific Roles
 
@@ -126,7 +178,7 @@ ansible-playbook -i inventories/stage/hosts.yml playbooks/base_setup.yml
 #### Database server only
 
 ```bash
-ansible-playbook -i inventories/stage/hosts.yml playbooks/db_setup.yml --ask-vault-pass
+ansible-playbook -i inventories/stage/hosts.yml playbooks/db_setup.yml
 ```
 
 #### Application host only
