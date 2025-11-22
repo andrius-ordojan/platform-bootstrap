@@ -25,10 +25,10 @@ ping-prod:
 	ansible all -i inventories/prod/hosts.yml -m ping
 
 setup-stage:
-	ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --ask-vault-pass
+	ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml
 
 setup-prod:
-	ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml --ask-vault-pass
+	ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 
 base-stage:
 	ansible-playbook -i inventories/stage/hosts.yml playbooks/base_setup.yml
@@ -37,10 +37,10 @@ base-prod:
 	ansible-playbook -i inventories/prod/hosts.yml playbooks/base_setup.yml
 
 db-stage:
-	ansible-playbook -i inventories/stage/hosts.yml playbooks/db_setup.yml --ask-vault-pass
+	ansible-playbook -i inventories/stage/hosts.yml playbooks/db_setup.yml
 
 db-prod:
-	ansible-playbook -i inventories/prod/hosts.yml playbooks/db_setup.yml --ask-vault-pass
+	ansible-playbook -i inventories/prod/hosts.yml playbooks/db_setup.yml
 
 app-stage:
 	ansible-playbook -i inventories/stage/hosts.yml playbooks/app_setup.yml
@@ -49,7 +49,7 @@ app-prod:
 	ansible-playbook -i inventories/prod/hosts.yml playbooks/app_setup.yml
 
 check-stage:
-	ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --check --ask-vault-pass
+	ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --check
 
 check-prod:
-	ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml --check --ask-vault-pass
+	ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml --check
