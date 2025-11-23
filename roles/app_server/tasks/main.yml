@@ -19,31 +19,56 @@
     append: true
   loop: "{{ deploy_group_users }}"
 
-- name: Create application directory structure
-  file:
-    path: "{{ item.path }}"
-    state: directory
-    owner: "{{ item.owner | default(system_user) }}"
-    group: "{{ item.group | default(system_user) }}"
-    mode: "{{ item.mode | default('0755') }}"
-  loop:
-    - { path: "{{ app_base_dir }}" }
-    - { path: "{{ app_base_dir }}/backend" }
-    - { path: "{{ app_base_dir }}/backend/bin" }
-    - { path: "{{ app_base_dir }}/web" }
-    - { path: "{{ app_log_dir }}", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_log_dir }}/backend", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_log_dir }}/web", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_data_dir }}", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_data_dir }}/backend", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_data_dir }}/web", owner: "{{ app_user }}", group: "{{ app_user }}" }
-    - { path: "{{ app_config_dir }}", owner: "{{ system_user }}", group: "{{ deploy_group }}" }
-
-- name: Create secret environment files
+- name: Create application base directories
   file:
     path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ app_base_dir }}"
+    - "{{ app_base_dir }}/backend"
+    - "{{ app_base_dir }}/backend/bin"
+    - "{{ app_base_dir }}/web"
+
+- name: Create application log directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+  loop:
+    - "{{ app_log_dir }}"
+    - "{{ app_log_dir }}/backend"
+    - "{{ app_log_dir }}/web"
+
+- name: Create application data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+  loop:
+    - "{{ app_data_dir }}"
+    - "{{ app_data_dir }}/backend"
+    - "{{ app_data_dir }}/web"
+
+- name: Create application config directory
+  file:
+    path: "{{ app_config_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ deploy_group }}"
+    mode: "0755"
+
+- name: Create environment files
+  file:
+    path: "{{ item }}"
+    owner: "{{ admin_user }}"
     state: touch
-    owner: "{{ system_user }}"
     group: "{{ deploy_group }}"
     mode: '0640'
     modification_time: preserve

@@ -8,5 +8,5 @@ app_config_dir: "/etc/{{ app_name }}"
 
 deploy_group: deploy
 deploy_group_users:
-  - "{{ system_user }}"
+  - "{{ admin_user }}"
   - "{{ app_user }}"
