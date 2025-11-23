@@ -9,13 +9,6 @@
     name: caddy
     enabled: true
 
-- name: Check if Caddyfile source exists
-  stat:
-    path: "{{ playbook_dir }}/../roles/caddy/files/{{ caddy_config_source }}"
-  delegate_to: localhost
-  register: caddyfile_source
-  when: caddy_config_source != ""
-
 - name: Deploy Caddyfile
   copy:
     src: "{{ caddy_config_source }}"
@@ -24,7 +17,7 @@
     group: root
     mode: '0644'
   notify: reload caddy
-  when: caddy_config_source != "" and caddyfile_source.stat.exists
+  when: caddy_config_source != ""
 
 - name: Ensure Caddy is started
   systemd:
