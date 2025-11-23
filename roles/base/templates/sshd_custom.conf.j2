@@ -6,4 +6,8 @@ AuthorizedKeysFile .ssh/authorized_keys
 Protocol 2
 MaxAuthTries {{ base_ssh_max_auth_tries }}
 
-AllowUsers {{ ansible_user }} {{ admin_user }}
+# Keep SSH connections alive
+ClientAliveInterval 60
+ClientAliveCountMax 3
+
+AllowUsers {{ automation_user }} {{ admin_user }}

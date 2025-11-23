@@ -68,8 +68,8 @@
 
 - name: Create ansible automation user
   user:
-    name: "{{ ansible_user }}"
-    shell: "{{ base_user_shell }}"
+    name: "{{ automation_user }}"
+    shell: /bin/bash
     groups: "{{ base_user_groups }}"
     append: true
     state: present
@@ -77,46 +77,22 @@
 
 - name: Create .ssh directory for ansible user
   file:
-    path: "/home/{{ ansible_user }}/.ssh"
+    path: "/home/{{ automation_user }}/.ssh"
     state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    owner: "{{ automation_user }}"
+    group: "{{ automation_user }}"
     mode: "0700"
 
 - name: Add SSH public key to ansible user authorized_keys
   authorized_key:
-    user: "{{ ansible_user }}"
+    user: "{{ automation_user }}"
     state: present
-    key: "{{ ansible_user_ssh_key }}"
-
-- name: Create fish config directory for ansible user
-  file:
-    path: "/home/{{ ansible_user }}/.config/fish/conf.d"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: "0755"
-
-- name: Deploy fish aliases for ansible user
-  copy:
-    src: fish_aliases.fish
-    dest: "/home/{{ ansible_user }}/.config/fish/conf.d/alias.fish"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: "0644"
-
-- name: Deploy fish environment variables for ansible user
-  copy:
-    src: fish_env.fish
-    dest: "/home/{{ ansible_user }}/.config/fish/conf.d/env.fish"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: "0644"
+    key: "{{ automation_user_ssh_key }}"
 
 - name: Configure passwordless sudo for ansible user
   copy:
-    content: "{{ ansible_user }} ALL=(ALL) NOPASSWD:ALL\n"
-    dest: "/etc/sudoers.d/{{ ansible_user }}"
+    content: "{{ automation_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ automation_user }}"
     mode: "0440"
     validate: "visudo -cf %s"
 
