@@ -85,7 +85,6 @@ Add your servers, grouped by role:
 ```yaml
 all:
   vars:
-    ansible_user: ansible  # Change to 'root' for first run, then back to 'ansible'
     ansible_python_interpreter: /usr/bin/python3
 
   children:
@@ -111,7 +110,7 @@ echo "your_vault_password" > .vault_pass
 chmod 600 .vault_pass
 ```
 
-For the first run on new servers, override the user to connect as root:
+For the first run on new servers, you **must** override `ansible_user=root` to connect as root. This creates both the ansible and admin users on the server:
 
 ```bash
 # First run on all servers
@@ -121,7 +120,9 @@ ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml -e "ansible_u
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit stage-app1 -e "ansible_user=root"
 ```
 
-This will:
+**Important:** The `-e "ansible_user=root"` flag overrides the connection user to root for this run only. The playbook will still create a user named `ansible` (defined by `automation_user` in your inventory vars) for future automation tasks.
+
+This first run will:
 - Update the server and install packages
 - Configure timezone, neovim, and unattended upgrades
 - Create the **ansible user** (passwordless sudo) for Ansible automation
@@ -131,13 +132,13 @@ This will:
 
 ### Subsequent Runs
 
-After both users are created, run without the override:
+After both users are created, run without the override. The playbook will automatically connect as the **ansible user**:
 
 ```bash
 ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml
 ```
 
-This will connect as the **ansible user** and perform all automation tasks.
+The connection user defaults to `automation_user` (ansible), so no `-e` override is needed.
 
 ### Logging in as Admin
 
