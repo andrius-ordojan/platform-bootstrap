@@ -53,12 +53,14 @@ This project creates two separate users for security and audit purposes:
 - **Purpose**: Ansible automation only
 - **Sudo**: Passwordless (required for automation)
 - **SSH**: Key-based authentication only
+- **Shell**: /bin/bash (minimal, no fancy configs)
 - **Usage**: Never login manually, only used by Ansible
 
 ### admin user (manual operations)
 - **Purpose**: Human administrators for manual server work
 - **Sudo**: Password-required (more secure for manual operations)
 - **SSH**: Key-based authentication only
+- **Shell**: fish (with aliases and environment configs)
 - **Usage**: Your daily driver for server management
 
 This separation ensures:
@@ -252,21 +254,25 @@ make check-stage   # Dry-run
 
 ## Configuration
 
-Some commonly used variables:
+Key variables in `inventories/stage/group_vars/all/main.yml`:
 
 ```yaml
-# inventories/stage/group_vars/all/main.yml
 env: stage
 timezone: Europe/Berlin
 
-# Ansible automation user (passwordless sudo)
-ansible_user: ansible
-ansible_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+# Ansible automation user (created on server, used for automation)
+automation_user: ansible
+automation_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
 
 # Admin user for manual operations (password-required sudo)
 admin_user: admin
 admin_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+
+# Connection user (defaults to automation_user, override with -e ansible_user=root for first run)
+ansible_user: "{{ automation_user }}"
 ```
+
+**Important:** `automation_user` defines the user to create on the server, while `ansible_user` is the connection user. For first runs, override with `-e "ansible_user=root"` to connect as root while still creating the ansible user.
 
 Database-specific variables:
 
@@ -280,12 +286,29 @@ postgresql_users:
     database: appdb
 ```
 
-Application role variables:
+Application role variables (in `inventories/stage/group_vars/app_servers.yml`):
 
 ```yaml
 app_name: myapp # Required - used for system user and directory paths
-# app_user: custom_user  # Optional - defaults to app_name
 caddy_config_source: stage_Caddyfile
+
+# Firewall settings for app servers (HTTP/HTTPS for Caddy)
+firewall_allow_http: true
+firewall_allow_https: true
+
+# Deploy group - admin user gets read access to app files
+deploy_group: deploy
+deploy_group_users:
+  - "{{ admin_user }}"
 ```
 
-Directories are automatically generated from `app_name`: `/opt/{{ app_name }}`, `/var/log/{{ app_name }}`, `/var/lib/{{ app_name }}`, `/etc/{{ app_name }}`
+**Directory structure created:**
+- `/opt/{{ app_name }}/` - Application code (owned by admin_user)
+- `/var/log/{{ app_name }}/` - Log files (owned by app_user)
+- `/var/lib/{{ app_name }}/` - Application data (owned by app_user)
+- `/etc/{{ app_name }}/` - Configuration files (owned by admin_user, group deploy)
+
+**Security model:**
+- `app_user` (system user) runs the application with write access only to logs and data
+- `admin_user` owns the code and config files (read-only for app)
+- This isolation limits damage if the application is compromised
