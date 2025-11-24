@@ -1,27 +1,17 @@
 # platform-bootstrap
 
-platform-bootstrap is an Ansible-based toolkit for provisioning Debian servers for self-hosted applications. It provides a repeatable, idempotent infrastructure-as-code foundation that can be applied consistently across staging and production environments.
-
-It handles the full lifecycle of a fresh server, including:
-
-- base system configuration and SSH access
-- firewall and intrusion protection
-- PostgreSQL setup
-- application user + directories
-- Caddy reverse proxy with HTTPS
-
-The goal is to provide a simple, reusable starting point for deploying small applications without manually configuring servers each time.
+An Ansible toolkit for provisioning Debian servers for self-hosted applications. Provides repeatable, idempotent infrastructure-as-code that works across staging and production environments.
 
 ## Features
 
-- **Two-user security model** — separate ansible (automation) and admin (manual) users
-- **Base server setup** — users, SSH, common packages, timezone, updates
-- **PostgreSQL provisioning** — installation, users, databases
-- **Firewall (UFW) + Fail2Ban** — basic hardening
-- **Caddy reverse proxy** — domain routing and TLS
-- **Environment-specific inventories** — stage vs prod
-- **Idempotent roles** — safe to re-run
-- **Encrypted secrets with Ansible Vault**
+- **Two-user security model** — separate ansible (automation) and admin (manual) users with bash and fish shells
+- **Base hardening** — SSH key auth, UFW firewall, Fail2Ban intrusion detection
+- **PostgreSQL** — automated database and user provisioning with performance tuning
+- **Application isolation** — separate users for code ownership vs runtime execution
+- **Caddy reverse proxy** — automatic HTTPS with Let's Encrypt
+- **Environment separation** — distinct staging and production inventories
+- **Encrypted secrets** — Ansible Vault for passwords and sensitive data
+- **Idempotent** — safe to re-run without breaking existing setup
 
 ## Project Structure
 
@@ -50,13 +40,14 @@ platform-bootstrap/
 This project creates two separate users for security and audit purposes:
 
 ### ansible user (automation)
+
 - **Purpose**: Ansible automation only
 - **Sudo**: Passwordless (required for automation)
 - **SSH**: Key-based authentication only
-- **Shell**: /bin/bash (minimal, no fancy configs)
 - **Usage**: Never login manually, only used by Ansible
 
 ### admin user (manual operations)
+
 - **Purpose**: Human administrators for manual server work
 - **Sudo**: Password-required (more secure for manual operations)
 - **SSH**: Key-based authentication only
@@ -64,6 +55,7 @@ This project creates two separate users for security and audit purposes:
 - **Usage**: Your daily driver for server management
 
 This separation ensures:
+
 - Clear audit trail between automated and manual changes
 - Security: compromised admin credentials still require sudo password
 - Flexibility: multiple admins without touching automation user
@@ -125,6 +117,7 @@ ansible-playbook -i inventories/stage/hosts.yml playbooks/site.yml --limit stage
 **Important:** The `-e "ansible_user=root"` flag overrides the connection user to root for this run only. The playbook will still create a user named `ansible` (defined by `automation_user` in your inventory vars) for future automation tasks.
 
 This first run will:
+
 - Update the server and install packages
 - Configure timezone, neovim, and unattended upgrades
 - Create the **ansible user** (passwordless sudo) for Ansible automation
@@ -209,6 +202,7 @@ mkpasswd --method=sha-512
 ```
 
 **Note:**
+
 - The vault password is automatically read from `.vault_pass`, so you won't be prompted during playbook runs
 - `vault_admin_user_password` must be a hashed password (use `mkpasswd`)
 - `vault_db_password` can be plain text (PostgreSQL handles its own hashing)
@@ -303,12 +297,14 @@ deploy_group_users:
 ```
 
 **Directory structure created:**
+
 - `/opt/{{ app_name }}/` - Application code (owned by admin_user)
 - `/var/log/{{ app_name }}/` - Log files (owned by app_user)
 - `/var/lib/{{ app_name }}/` - Application data (owned by app_user)
 - `/etc/{{ app_name }}/` - Configuration files (owned by admin_user, group deploy)
 
 **Security model:**
+
 - `app_user` (system user) runs the application with write access only to logs and data
 - `admin_user` owns the code and config files (read-only for app)
 - This isolation limits damage if the application is compromised
