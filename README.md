@@ -246,65 +246,16 @@ make setup-stage   # Full staging setup
 make check-stage   # Dry-run
 ```
 
-## Configuration
+## Key Concepts
 
-Key variables in `inventories/stage/group_vars/all/main.yml`:
+**User separation:** `automation_user` defines the user to create on the server (ansible), while `ansible_user` is the connection user. For first runs, override with `-e "ansible_user=root"` to connect as root while still creating the ansible user.
 
-```yaml
-env: stage
-timezone: Europe/Berlin
+**Application security:** The app runs as `app_user` (system user) with write access only to logs and data. The `admin_user` owns code and config files (read-only for the app). This isolation limits damage if the application is compromised.
 
-# Ansible automation user (created on server, used for automation)
-automation_user: ansible
-automation_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
-
-# Admin user for manual operations (password-required sudo)
-admin_user: admin
-admin_user_ssh_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
-
-# Connection user (defaults to automation_user, override with -e ansible_user=root for first run)
-ansible_user: "{{ automation_user }}"
-```
-
-**Important:** `automation_user` defines the user to create on the server, while `ansible_user` is the connection user. For first runs, override with `-e "ansible_user=root"` to connect as root while still creating the ansible user.
-
-Database-specific variables:
-
-```yaml
-postgresql_databases:
-  - name: appdb
-
-postgresql_users:
-  - name: app
-    password: "{{ vault_db_password }}"
-    database: appdb
-```
-
-Application role variables (in `inventories/stage/group_vars/app_servers.yml`):
-
-```yaml
-app_name: myapp # Required - used for system user and directory paths
-caddy_config_source: stage_Caddyfile
-
-# Firewall settings for app servers (HTTP/HTTPS for Caddy)
-firewall_allow_http: true
-firewall_allow_https: true
-
-# Deploy group - admin user gets read access to app files
-deploy_group: deploy
-deploy_group_users:
-  - "{{ admin_user }}"
-```
-
-**Directory structure created:**
-
+**Directory structure:**
 - `/opt/{{ app_name }}/` - Application code (owned by admin_user)
 - `/var/log/{{ app_name }}/` - Log files (owned by app_user)
 - `/var/lib/{{ app_name }}/` - Application data (owned by app_user)
-- `/etc/{{ app_name }}/` - Configuration files (owned by admin_user, group deploy)
+- `/etc/{{ app_name }}/` - Configuration (owned by admin_user, group deploy)
 
-**Security model:**
-
-- `app_user` (system user) runs the application with write access only to logs and data
-- `admin_user` owns the code and config files (read-only for app)
-- This isolation limits damage if the application is compromised
+Configuration lives in `inventories/{stage,prod}/group_vars/` - check the files there for available variables.
